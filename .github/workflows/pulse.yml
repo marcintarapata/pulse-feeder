@@ -1,0 +1,32 @@
+name: Feed Pulse board
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes (GitHub may delay scheduled runs)
+  workflow_dispatch:          # run by hand from the Actions tab
+  repository_dispatch:        # lets other repos trigger an instant refresh
+    types: [pulse-refresh]
+
+concurrency:
+  group: pulse-feed
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  feed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun scripts/pulse-feed.ts
+        env:
+          GH_TOKEN: ${{ secrets.PULSE_GH_TOKEN }}
+          PULSE_URL: https://pulse.lola.farm
+          PULSE_REPOS_TILE: ${{ vars.PULSE_REPOS_TILE }}
+          PULSE_REPOS_TOKEN: ${{ secrets.PULSE_REPOS_TOKEN }}
+          PULSE_ACTIVITY_TILE: ${{ vars.PULSE_ACTIVITY_TILE }}
+          PULSE_ACTIVITY_TOKEN: ${{ secrets.PULSE_ACTIVITY_TOKEN }}
+          REPOS: ${{ vars.PULSE_REPOS }}
