@@ -55,3 +55,32 @@ bun scripts/pulse-feed.ts
 ```
 
 `GH_TOKEN` for a local run stays in the environment for that command. Do not write it into a file or a GitHub secret of this repo; the Actions secret is the fine-grained PAT above.
+
+## Stocks board
+
+Feeds the four tiles on the Pulse "STOCKS" board (Nell Ashby). **Actions → Feed Pulse stocks board** runs every 15 minutes, and you can run it by hand. The schedule stays at 15 minutes so Twelve Data stays under its free daily credit cap (about 6 credits per run).
+
+The script posts JSON to the same `POST /api/widget-data/<tile id>` endpoint, with `Authorization: Bearer <tile token>`.
+
+| Tile | Id variable | Body |
+| --- | --- | --- |
+| Watchlist | `PULSE_WATCHLIST_TILE` | `{ "currency": "USD", "symbols": [...] }`. Each symbol has `symbol`, `name`, `price`, `changePct` (percent, so 1.24 means +1.24%), and `spark` (recent prices, oldest first). The whole list is sent every time. |
+| Featured stock | `PULSE_FEATURED_TILE` | `{ "symbol", "name", "currency", "price", "previousClose", "points": [{ "t", "price" }] }`. `points` is today's session, oldest first, `t` an ISO time. |
+| Portfolio | `PULSE_PORTFOLIO_TILE` | `{ "currency", "totalValue", "dayChange", "dayChangePct", "holdings": [{ "symbol", "value" }] }`. `dayChangePct` is a percent. Values are dollars. |
+| Market news | `PULSE_NEWS_TILE` | `{ "articles": [...] }`, newest first, at most 12. Each article has `headline`, `source`, `symbol`, and `publishedAt` (ISO). The list replaces the previous one. |
+
+### Secrets and variables
+
+- Secrets: `FINNHUB_API_KEY`, `TWELVEDATA_API_KEY`, `PULSE_WATCHLIST_TOKEN`, `PULSE_FEATURED_TOKEN`, `PULSE_PORTFOLIO_TOKEN`, `PULSE_NEWS_TOKEN`
+- Variables: `PULSE_WATCHLIST_TILE`, `PULSE_FEATURED_TILE`, `PULSE_PORTFOLIO_TILE`, `PULSE_NEWS_TILE`
+
+The tile ids and tokens are set. `FINNHUB_API_KEY` and `TWELVEDATA_API_KEY` are repository secrets too; they are not stored in this repo. Logs print a status code and, for Pulse, the tile id. They do not print keys, tokens, request URLs, or response bodies.
+
+```sh
+FINNHUB_API_KEY=... TWELVEDATA_API_KEY=... PULSE_URL=https://pulse.lola.farm \
+PULSE_WATCHLIST_TILE=... PULSE_WATCHLIST_TOKEN=... \
+PULSE_FEATURED_TILE=... PULSE_FEATURED_TOKEN=... \
+PULSE_PORTFOLIO_TILE=... PULSE_PORTFOLIO_TOKEN=... \
+PULSE_NEWS_TILE=... PULSE_NEWS_TOKEN=... \
+bun scripts/stocks-feed.ts
+```

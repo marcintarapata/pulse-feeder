@@ -1,0 +1,34 @@
+name: Feed Pulse stocks board
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes; keeps Twelve Data under 800 credits/day
+  workflow_dispatch:
+
+concurrency:
+  group: pulse-stocks
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  feed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun scripts/stocks-feed.ts
+        env:
+          PULSE_URL: https://pulse.lola.farm
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          PULSE_WATCHLIST_TILE: ${{ vars.PULSE_WATCHLIST_TILE }}
+          PULSE_WATCHLIST_TOKEN: ${{ secrets.PULSE_WATCHLIST_TOKEN }}
+          PULSE_FEATURED_TILE: ${{ vars.PULSE_FEATURED_TILE }}
+          PULSE_FEATURED_TOKEN: ${{ secrets.PULSE_FEATURED_TOKEN }}
+          PULSE_PORTFOLIO_TILE: ${{ vars.PULSE_PORTFOLIO_TILE }}
+          PULSE_PORTFOLIO_TOKEN: ${{ secrets.PULSE_PORTFOLIO_TOKEN }}
+          PULSE_NEWS_TILE: ${{ vars.PULSE_NEWS_TILE }}
+          PULSE_NEWS_TOKEN: ${{ secrets.PULSE_NEWS_TOKEN }}
